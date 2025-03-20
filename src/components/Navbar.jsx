@@ -1,14 +1,30 @@
 import { useState } from "react";
 import { FiMenu, FiX } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
+import {auth} from '../firebase/config';
+import { signOut } from "firebase/auth";
+import toast from "react-hot-toast";
+
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  const Logout = () => {
+  const Logout =async () => {
+    const loader = toast.loading("logging out...")
     setIsOpen(false); // Fix: Close menu on logout
+    try{
+    await signOut(auth);
+    toast.success("Logged out!", {id:loader})
+    navigate('/login')
+    }catch(e){
+      toast.error("Network error!")
+      console.log(e)
+    }
+    
   };
+
+ 
 
   return (
     <div
@@ -18,11 +34,11 @@ const Navbar = () => {
       
       <h1 className="lg:ml-20 text-2xl font-extrabold text-">WhisperNote</h1>
       <div className="hidden lg:block lg:mr-20 space-x-5 text-white font-bold lg:space-x-7">
-        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/login">Login</Link>
-        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/signup">SignUp</Link>
-        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/">Home</Link>
-        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/about">About</Link>
-        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/contact">Contact</Link>
+
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-400 active:border-b-cyan-500 active:text-fuchsia-900' to="/">Home</Link>
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-400 active:border-b-cyan-500 active:text-fuchsia-900' to="/about">About</Link>
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-500 active:border-b-cyan-500 active:text-fuchsia-900' to="/contact">Contact</Link>
+        <Link onClick={Logout} className=' transition-all duration-300 bg-black/50 px-4 py-2 rounded-full hover:text-fuchsia-500 active:border-b-cyan-500 hover:bg-black/60 active:bg-black/70' to="/contact">Logout</Link>
       </div>
 
 
