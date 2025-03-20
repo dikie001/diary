@@ -1,26 +1,23 @@
 import React from 'react';
+import Navbar from '../components/Navbar';
 
 const Diary = () => {
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-indigo-900 via-blue-700 to-violet-800 text-white">
+    <div className="h-screen flex overflow-y-auto flex-col bg-gradient-to-br from-indigo-900 via-blue-700 to-violet-800 text-white">
       {/* Header */}
-      <header className="flex justify-between items-center p-4 bg-black/30 backdrop-blur-md">
+      <header className="w-full mx-auto overflow-visible flex sticky top-0 left-0 right-0 justify-between items-center p-2 bg-black/30 backdrop-blur-md">
         <h1 className="text-2xl font-bold">WhisperNote</h1>
         <nav>
-          <ul className="flex space-x-4">
-            <li><a href="/home" className="hover:underline">Home</a></li>
-            <li><a href="/about" className="hover:underline">About</a></li>
-            <li><a href="/contact" className="hover:underline">Contact</a></li>
-          </ul>
+        <Navbar/>
         </nav>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow p-6 overflow-y-auto">
+      <main className="p-4 w-full md:w-[80%] h-dvh lg:w-[60%]  ">
         {/* Diary Entry Form */}
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">New Entry</h2>
-          <form className="bg-white/10 p-4 rounded-lg shadow-md">
+          <div className="bg-white/10 p-4 rounded-lg shadow-md">
             <input
               type="text"
               placeholder="Title"
@@ -34,11 +31,11 @@ const Diary = () => {
             ></textarea>
             <button
               type="submit"
-              className="mt-4 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+              className="mt-4 px-4 py-2 bg-violet-800 rounded font-bold active:bg-violet-600 hover:bg-violet-700 transition"
             >
               Save Entry
             </button>
-          </form>
+          </div>
         </section>
 
         {/* Diary Entries List */}
@@ -60,10 +57,7 @@ const Diary = () => {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="p-4 bg-black/30 backdrop-blur-md text-center">
-        <p className="text-sm text-white/80">&copy; 2025 WhisperNote. All rights reserved.</p>
-      </footer>
+      
     </div>
   );
 };
