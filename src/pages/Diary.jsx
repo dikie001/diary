@@ -1,10 +1,34 @@
-import React from 'react';
-import Navbar from '../components/Navbar';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const Diary = () => {
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const auth = getAuth();
+  const navigate = useNavigate();
+  
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("user logged in");
+      const uid = user.uid;
+      setLoggedInUser(user);
+      // ...
+    } else {
+      console.log("user logged out");
+      // User is signed out
+      setLoggedInUser(null);
+      // ...
+    }
+  });
+
+  if (!loggedInUser) {
+    navigate('/login')
+  }
+
   return (
     <div className="h-screen flex overflow-y-auto flex-col bg-gradient-to-br from-indigo-900 via-blue-700 to-violet-800 text-white">
-    <Navbar/>
+      <Navbar />
       {/* Main Content */}
       <main className="p-4 w-full md:w-[80%] h-dvh lg:w-[60%] m-auto ">
         {/* Diary Entry Form */}
@@ -49,8 +73,6 @@ const Diary = () => {
           </div>
         </section>
       </main>
-
-      
     </div>
   );
 };

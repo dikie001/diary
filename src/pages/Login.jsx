@@ -5,15 +5,17 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
-import { FaFacebookF } from "react-icons/fa6";
+import { FaFacebookF, FaSpinner } from "react-icons/fa6";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoggingIn(true);
     const loginLoader = toast.loading("Logging in...");
 
     try {
@@ -32,9 +34,9 @@ const Login = () => {
           return;
         }
       }
-      navigate("/");
       await signInWithEmailAndPassword(auth, userEmail, password);
       toast.success("Logged in Successfully!", { id: loginLoader });
+      navigate("/");
 
       // Clear fields
       setUsername("");
@@ -42,6 +44,8 @@ const Login = () => {
     } catch (e) {
       console.log(e);
       toast.error("Invalid login credentials", { id: loginLoader });
+    } finally {
+      setLoggingIn(false);
     }
   };
 
@@ -54,15 +58,15 @@ const Login = () => {
       toast.success("Signed in Successfully...", { id: loadingToast });
     } catch (e) {
       console.log(e);
-      toast.error("Error from application, Try again...", {id:loadingToast})
+      toast.error("Error from application, Try again...", { id: loadingToast });
     }
-    navigate('/')
+    navigate("/");
   };
 
-  const FacebookSignIn = async(e)=>{
+  const FacebookSignIn = async (e) => {
     e.preventDefault();
-    toast.error("Facebook login not impemented.")
-  }
+    toast.error("Facebook login not impemented.", { id: "notImplemented" });
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-indigo-800 via-blue-600 to-violet-700">
@@ -102,9 +106,12 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition shadow-md"
+            disabled={loggingIn}
+            className="w-full flex justify-center items-center gap-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition shadow-md"
           >
-            Login
+            {loggingIn ? (<>
+            <FaSpinner className="animate-spin" /> Logging in...
+            </>) : "Login"}
           </button>
         </form>
         <h1 className="text-gray-300 text-center mt-5">Or sign in using:</h1>

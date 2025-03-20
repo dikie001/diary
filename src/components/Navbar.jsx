@@ -32,7 +32,7 @@ const Navbar = () => {
 
     >
       
-      <h1 className="lg:ml-20 text-2xl font-extrabold text-">WhisperNote</h1>
+      <h1 className="lg:ml-20 text-2xl text-white font-extrabold text-">WhisperNote</h1>
       <div className="hidden lg:block lg:mr-20 space-x-5 text-white font-bold lg:space-x-7">
 
         <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-400 active:border-b-cyan-500 active:text-fuchsia-900' to="/">Home</Link>

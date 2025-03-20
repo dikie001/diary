@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
@@ -11,12 +10,12 @@ const firebaseConfig = {
   storageBucket: "whisper-note-ef57e.firebasestorage.app",
   messagingSenderId: "596528563138",
   appId: "1:596528563138:web:b46326390d00030461cc5b",
-  measurementId: "G-M1268Y4HC3"
+  measurementId: "G-M1268Y4HC3",
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 export const provider = new GoogleAuthProvider();
 export const auth = getAuth(app);
-export const db = getFirestore(app)
+export const db = getFirestore(app);
