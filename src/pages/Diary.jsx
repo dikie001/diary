@@ -1,34 +1,59 @@
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
-import {db} from "../firebase/config.js"
-import React, { useState, useEffect, useRef } from "react";
+import { db } from "../firebase/config.js";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { Calendar, Clock, Edit, Save, Trash, Moon, Sun, Search, X, Tag, AlertTriangle, Camera, Lock, ChevronDown, Bookmark, Unlock, Image } from "lucide-react";
+import { Calendar, Clock, Edit, Save, Trash, Moon, Sun, Search, X, Tag, AlertTriangle, Lock, ChevronDown, Bookmark, Unlock, Image } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const MOODS = [
+  { name: "neutral", emoji: "😐" },
+  { name: "happy", emoji: "😊" },
+  { name: "sad", emoji: "😢" },
+  { name: "excited", emoji: "🎉" },
+  { name: "angry", emoji: "😠" },
+  { name: "anxious", emoji: "😰" }
+];
+
+const TAG_SUGGESTIONS = ["personal", "work", "health", "travel", "family", "goals", "gratitude", "memories"];
 
 const Diary = () => {
+  // User state
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const [entries, setEntries] = useState([]);
-  const [text, setText] = useState("");
+  
+  // Entry form state
   const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
   const [mood, setMood] = useState("neutral");
-  const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedEntry, setSelectedEntry] = useState(null);
   const [tags, setTags] = useState([]);
   const [currentTag, setCurrentTag] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
-  const [expandedEntry, setExpandedEntry] = useState(null);
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  
+  // Entries state
+  const [entries, setEntries] = useState([]);
   const [bookmarkedEntries, setBookmarkedEntries] = useState([]);
+  const [expandedEntry, setExpandedEntry] = useState(null);
+  
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("darkMode") === "true";
+  });
+  const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  const [alertMessage, setAlertMessage] = useState(null);
-  const [tagSuggestions] = useState(["personal", "work", "health", "travel", "family", "goals", "gratitude", "memories"]);
-  const textareaRef = useRef(null);
   
+  const textareaRef = useRef(null);
   const auth = getAuth();
   const navigate = useNavigate();
+
+  // Save dark mode preference
+  useEffect(() => {
+    localStorage.setItem("darkMode", darkMode);
+  }, [darkMode]);
 
   // Authentication effect
   useEffect(() => {
@@ -46,7 +71,7 @@ const Diary = () => {
   }, [auth, navigate]);
 
   // Fetch entries from Firestore
-  const fetchEntries = async (userId) => {
+  const fetchEntries = useCallback(async (userId) => {
     try {
       setLoading(true);
       const entriesRef = collection(db, "diaryEntries");
@@ -72,18 +97,30 @@ const Diary = () => {
       setBookmarkedEntries(bookmarkedIds);
     } catch (error) {
       console.error("Error fetching entries:", error);
-      showAlert("Failed to load entries. Please try again.");
+      toast.error("Failed to load entries. Please try again.");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Form validation
+  const validateForm = () => {
+    if (!title.trim()) {
+      toast.error("Please provide a title for your entry.");
+      return false;
+    }
+    
+    if (!text.trim()) {
+      toast.error("Please provide content for your entry.");
+      return false;
+    }
+    
+    return true;
   };
 
   // Save entry to Firestore
   const saveEntry = async () => {
-    if (!title.trim() || !text.trim()) {
-      showAlert("Please provide both title and content for your entry.");
-      return;
-    }
+    if (!validateForm()) return;
     
     try {
       setLoading(true);
@@ -102,12 +139,12 @@ const Diary = () => {
         // Update existing entry
         const entryRef = doc(db, "diaryEntries", selectedEntry);
         await updateDoc(entryRef, entryData);
-        showAlert("Entry updated successfully!", "success");
+        toast.success("Entry updated successfully!");
       } else {
         // Create new entry
         entryData.createdAt = serverTimestamp();
         await addDoc(collection(db, "diaryEntries"), entryData);
-        showAlert("New entry saved!", "success");
+        toast.success("New entry saved!");
       }
       
       // Reset form and refresh entries
@@ -115,7 +152,7 @@ const Diary = () => {
       fetchEntries(loggedInUser.uid);
     } catch (error) {
       console.error("Error saving entry:", error);
-      showAlert("Failed to save your entry. Please try again.");
+      toast.error("Failed to save your entry. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -133,11 +170,11 @@ const Diary = () => {
       }
       
       setShowDeleteConfirm(null);
-      showAlert("Entry deleted successfully!", "success");
+      toast.success("Entry deleted successfully!");
       fetchEntries(loggedInUser.uid);
     } catch (error) {
       console.error("Error deleting entry:", error);
-      showAlert("Failed to delete entry. Please try again.");
+      toast.error("Failed to delete entry. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -146,7 +183,6 @@ const Diary = () => {
   // Toggle bookmark status
   const toggleBookmark = async (entryId) => {
     try {
-      const entry = entries.find(e => e.id === entryId);
       const isCurrentlyBookmarked = bookmarkedEntries.includes(entryId);
       
       const entryRef = doc(db, "diaryEntries", entryId);
@@ -154,24 +190,25 @@ const Diary = () => {
         bookmarked: !isCurrentlyBookmarked
       });
       
-      if (isCurrentlyBookmarked) {
-        setBookmarkedEntries(bookmarkedEntries.filter(id => id !== entryId));
-      } else {
-        setBookmarkedEntries([...bookmarkedEntries, entryId]);
-      }
+      setBookmarkedEntries(prevState => {
+        if (isCurrentlyBookmarked) {
+          return prevState.filter(id => id !== entryId);
+        } else {
+          return [...prevState, entryId];
+        }
+      });
       
       // Update entries array to reflect changes
-      setEntries(entries.map(e => 
+      setEntries(prevEntries => prevEntries.map(e => 
         e.id === entryId ? {...e, bookmarked: !isCurrentlyBookmarked} : e
       ));
       
-      showAlert(
-        isCurrentlyBookmarked ? "Entry removed from bookmarks" : "Entry bookmarked!", 
-        "success"
+      toast.success(
+        isCurrentlyBookmarked ? "Entry removed from bookmarks" : "Entry bookmarked!"
       );
     } catch (error) {
       console.error("Error toggling bookmark:", error);
-      showAlert("Failed to update bookmark status.");
+      toast.error("Failed to update bookmark status.");
     }
   };
 
@@ -196,14 +233,21 @@ const Diary = () => {
   // Add tag
   const addTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
-      setTags([...tags, currentTag.trim()]);
+      setTags(prevTags => [...prevTags, currentTag.trim()]);
       setCurrentTag("");
+    }
+  };
+
+  // Add tag from suggestions
+  const addTagFromSuggestion = (tagName) => {
+    if (!tags.includes(tagName)) {
+      setTags(prevTags => [...prevTags, tagName]);
     }
   };
 
   // Remove tag
   const removeTag = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(prevTags => prevTags.filter(tag => tag !== tagToRemove));
   };
 
   // Reset form
@@ -217,18 +261,12 @@ const Diary = () => {
     setIsPrivate(false);
   };
 
-  // Show alert
-  const showAlert = (message, type = "error") => {
-    setAlertMessage({ message, type });
-    setTimeout(() => setAlertMessage(null), 3000);
-  };
-
   // Filter entries based on search term and filters
   const filteredEntries = entries.filter(entry => {
     // Search term filter
     const matchesSearch = 
-      entry.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      entry.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (entry.tags && entry.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
     
     // Category filter
@@ -240,45 +278,58 @@ const Diary = () => {
     return matchesSearch;
   });
 
-  const getMoodEmoji = (mood) => {
-    switch(mood) {
-      case "happy": return "😊";
-      case "sad": return "😢";
-      case "excited": return "🎉";
-      case "angry": return "😠";
-      case "anxious": return "😰";
-      default: return "😐";
-    }
+  const getMoodEmoji = (moodName) => {
+    const moodObj = MOODS.find(m => m.name === moodName);
+    return moodObj ? moodObj.emoji : "😐";
   };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "Just now";
-    return new Date(timestamp.toDate()).toLocaleDateString('en-US', {
+    const date = new Date(timestamp.toDate());
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return "Invalid date";
+    
+    return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
     });
   };
 
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp.toDate());
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return "";
+    
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit', 
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className={`min-h-screen flex flex-col bg-gradient-to-br from-indigo-900 via-blue-700 to-violet-800 text-white ${darkMode ? 'brightness-75' : ''}`}>
       <Navbar />
+      
+      {/* Toast notifications container */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={darkMode ? "dark" : "light"}
+      />
 
       {/* Main Content */}
       <main className="p-4 w-full md:w-[80%] lg:w-[60%] mx-auto pb-20">
-        {/* Alert Message */}
-        {alertMessage && (
-          <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-lg flex items-center gap-2 transform transition-all duration-300 ${
-            alertMessage.type === "success" ? "bg-green-600" : "bg-red-600"
-          }`}>
-            {alertMessage.type === "success" ? 
-              <Check size={18} /> : 
-              <AlertTriangle size={18} />
-            }
-            <span>{alertMessage.message}</span>
-          </div>
-        )}
-
         {/* Header with welcome and theme toggle */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-gray-200 font-bold text-xl">
@@ -287,33 +338,35 @@ const Diary = () => {
           <button 
             onClick={() => setDarkMode(!darkMode)} 
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
 
         {/* Diary Entry Form */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
+        <section className="mb-8" aria-labelledby="entry-form-heading">
+          <h2 id="entry-form-heading" className="text-xl font-semibold mb-4">
             {selectedEntry ? "Edit Entry" : "New Entry"}
           </h2>
           <div className="bg-white/10 p-4 rounded-lg shadow-md">
             <div className="flex items-center mb-4">
-              {/* Preserved original input styling */}
               <input
                 type="text"
                 placeholder="Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none"
+                className="w-full p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-violet-400"
                 required
+                aria-label="Entry title"
               />
               
               {/* Private Toggle */}
               <button 
                 onClick={() => setIsPrivate(!isPrivate)}
-                className="ml-2 p-2 rounded-full"
+                className="ml-2 p-2 rounded-full hover:bg-white/10 transition"
                 title={isPrivate ? "Private entry" : "Public entry"}
+                aria-label={isPrivate ? "Mark as public" : "Mark as private"}
               >
                 {isPrivate ? 
                   <Lock size={18} className="text-violet-300" /> : 
@@ -322,18 +375,11 @@ const Diary = () => {
               </button>
             </div>
             
-            {/* Mood Selection with 3D-style emoji buttons */}
+            {/* Mood Selection */}
             <div className="mb-4">
               <label className="block mb-2 font-bold">How are you feeling?</label>
               <div className="flex gap-3 flex-wrap">
-                {[
-                  { name: "neutral", emoji: "😐" },
-                  { name: "happy", emoji: "😊" },
-                  { name: "sad", emoji: "😢" },
-                  { name: "excited", emoji: "🎉" },
-                  { name: "angry", emoji: "😠" },
-                  { name: "anxious", emoji: "😰" }
-                ].map((option) => (
+                {MOODS.map((option) => (
                   <button
                     key={option.name}
                     className={`w-12 h-12 text-xl flex items-center justify-center rounded-full transition-all transform 
@@ -345,6 +391,8 @@ const Diary = () => {
                         'inset 0 -2px 4px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.3)' : 
                         'inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 3px rgba(0,0,0,0.2)'
                     }}
+                    aria-label={`Set mood to ${option.name}`}
+                    aria-pressed={mood === option.name}
                   >
                     <span className="transform" style={{ fontSize: '1.5rem' }}>
                       {option.emoji}
@@ -364,6 +412,7 @@ const Diary = () => {
                     <button 
                       onClick={() => removeTag(tag)}
                       className="ml-1 p-1 hover:text-red-300"
+                      aria-label={`Remove ${tag} tag`}
                     >
                       <X size={14} />
                     </button>
@@ -377,44 +426,53 @@ const Diary = () => {
                   value={currentTag}
                   onChange={(e) => setCurrentTag(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                  className="flex-1 p-2 bg-transparent border-b border-gray-400 focus:outline-none"
+                  className="flex-1 p-2 bg-transparent border-b border-gray-400 focus:outline-none focus:border-violet-400"
+                  aria-label="Tag input"
                 />
                 <button
                   onClick={addTag}
-                  className="ml-2 px-3 py-1 bg-violet-700/50 rounded"
+                  className="ml-2 px-3 py-1 bg-violet-700/50 rounded hover:bg-violet-700/70 transition"
+                  disabled={!currentTag.trim()}
                 >
                   Add
                 </button>
               </div>
               
               {/* Tag suggestions */}
-              <div className="flex flex-wrap gap-1 mt-2">
-                {tagSuggestions
-                  .filter(tag => !tags.includes(tag) && (currentTag === "" || tag.includes(currentTag)))
-                  .slice(0, 5)
-                  .map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => {
-                        setTags([...tags, tag]);
-                      }}
-                      className="px-2 py-1 bg-white/10 rounded-full text-xs hover:bg-white/20"
-                    >
-                      #{tag}
-                    </button>
-                  ))
-                }
-              </div>
+              {TAG_SUGGESTIONS
+                .filter(tag => !tags.includes(tag) && (currentTag === "" || tag.includes(currentTag)))
+                .length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-300 mb-1">Suggestions:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {TAG_SUGGESTIONS
+                      .filter(tag => !tags.includes(tag) && (currentTag === "" || tag.includes(currentTag)))
+                      .slice(0, 5)
+                      .map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => addTagFromSuggestion(tag)}
+                          className="px-2 py-1 bg-white/10 rounded-full text-xs hover:bg-white/20 transition"
+                          aria-label={`Add ${tag} tag`}
+                        >
+                          #{tag}
+                        </button>
+                      ))
+                    }
+                  </div>
+                </div>
+              )}
             </div>
             
-            {/* Preserved original textarea styling */}
+            {/* Content textarea */}
             <textarea
               ref={textareaRef}
               placeholder="Write your thoughts..."
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="w-full p-2 h-40 bg-transparent border-b border-gray-400 focus:outline-none"
+              className="w-full p-2 h-40 bg-transparent border-b border-gray-400 focus:outline-none focus:border-violet-400 resize-y"
               required
+              aria-label="Entry content"
             ></textarea>
             
             {/* Action buttons */}
@@ -423,7 +481,8 @@ const Diary = () => {
                 type="submit"
                 onClick={saveEntry}
                 disabled={loading}
-                className="px-4 py-2 bg-violet-800 rounded font-bold active:bg-violet-600 hover:bg-violet-700 transition flex items-center gap-2"
+                className="px-4 py-2 bg-violet-800 rounded font-bold active:bg-violet-600 hover:bg-violet-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-busy={loading}
               >
                 <Save size={18} />
                 {loading ? "Saving..." : (selectedEntry ? "Update Entry" : "Save Entry")}
@@ -434,6 +493,7 @@ const Diary = () => {
                   <button
                     onClick={() => setShowDeleteConfirm(selectedEntry)}
                     className="px-4 py-2 bg-red-700 rounded font-bold hover:bg-red-600 transition flex items-center gap-2"
+                    aria-label="Delete entry"
                   >
                     <Trash size={18} />
                     Delete
@@ -441,6 +501,7 @@ const Diary = () => {
                   <button
                     onClick={resetForm}
                     className="px-4 py-2 bg-white/10 rounded font-bold hover:bg-white/20 transition"
+                    aria-label="Cancel editing"
                   >
                     Cancel
                   </button>
@@ -452,9 +513,9 @@ const Diary = () => {
 
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-labelledby="delete-modal-title">
             <div className="bg-indigo-900 p-6 rounded-lg shadow-xl max-w-md w-full">
-              <h3 className="text-xl font-bold mb-2">Delete Entry</h3>
+              <h3 id="delete-modal-title" className="text-xl font-bold mb-2">Delete Entry</h3>
               <p className="mb-4">Are you sure you want to delete this entry? This action cannot be undone.</p>
               <div className="flex justify-end gap-3">
                 <button
@@ -481,25 +542,29 @@ const Diary = () => {
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
             <button
               onClick={() => setFilter("all")}
-              className={`px-3 py-2 rounded-lg whitespace-nowrap ${filter === "all" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"}`}
+              className={`px-3 py-2 rounded-lg whitespace-nowrap ${filter === "all" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"} transition`}
+              aria-pressed={filter === "all"}
             >
               All Entries
             </button>
             <button
               onClick={() => setFilter("bookmarked")}
-              className={`px-3 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap ${filter === "bookmarked" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"}`}
+              className={`px-3 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap ${filter === "bookmarked" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"} transition`}
+              aria-pressed={filter === "bookmarked"}
             >
               <Bookmark size={16} /> Bookmarked
             </button>
             <button
               onClick={() => setFilter("private")}
-              className={`px-3 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap ${filter === "private" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"}`}
+              className={`px-3 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap ${filter === "private" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"} transition`}
+              aria-pressed={filter === "private"}
             >
               <Lock size={16} /> Private
             </button>
             <button
               onClick={() => setFilter("mood")}
-              className={`px-3 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap ${filter === "mood" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"}`}
+              className={`px-3 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap ${filter === "mood" ? "bg-violet-600" : "bg-white/10 hover:bg-white/20"} transition`}
+              aria-pressed={filter === "mood"}
             >
               {getMoodEmoji(mood)} By Mood
             </button>
@@ -515,14 +580,24 @@ const Diary = () => {
               placeholder="Search entries by title, content or tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 p-3 bg-white/5 rounded-lg  border-2 border-transparent outline-none focus:border-violet-400 transition"
+              className="w-full pl-10 p-3 bg-white/5 rounded-lg border-2 border-transparent outline-none focus:border-violet-400 transition"
+              aria-label="Search entries"
             />
+            {searchTerm && (
+              <button 
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() => setSearchTerm("")}
+                aria-label="Clear search"
+              >
+                <X size={18} className="text-gray-300 hover:text-white" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Diary Entries List */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Your Entries</h2>
+        <section aria-labelledby="entries-heading">
+          <h2 id="entries-heading" className="text-xl font-semibold mb-4">Your Entries</h2>
           
           {loading && entries.length === 0 ? (
             <div className="text-center py-8">
@@ -536,46 +611,46 @@ const Diary = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4" role="list">
               {filteredEntries.map((entry) => (
                 <article 
                   key={entry.id} 
                   className="bg-white/10 p-4 rounded-lg shadow-md hover:shadow-xl transition group"
+                  role="listitem"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center">
                         <h3 className="text-lg font-bold flex items-center gap-2">
-                          {entry.title} 
+                          {entry.title || "Untitled"} 
                           {entry.mood && (
                             <span className="inline-block transform scale-110 text-xl" style={{ 
                               filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
                               textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                            }}>
+                            }}
+                            aria-label={`Mood: ${entry.mood}`}
+                            >
                               {getMoodEmoji(entry.mood)}
                             </span>
                           )}
                         </h3>
                         {entry.isPrivate && (
-                          <Lock size={14} className="ml-2 text-violet-300" />
+                          <Lock size={14} className="ml-2 text-violet-300" aria-label="Private entry" />
                         )}
                       </div>
                       <div className="flex items-center text-sm text-gray-300 mt-1 flex-wrap">
-                        <Calendar size={14} className="mr-1" />
-                        {formatDate(entry.createdAt)}
+                        <Calendar size={14} className="mr-1" aria-hidden="true" />
+                        <span>{formatDate(entry.createdAt)}</span>
                         {entry.createdAt && (
                           <>
-                            <Clock size={14} className="ml-3 mr-1" />
-                            {new Date(entry.createdAt.toDate()).toLocaleTimeString('en-US', {
-                              hour: '2-digit', 
-                              minute: '2-digit'
-                            })}
+                            <Clock size={14} className="ml-3 mr-1" aria-hidden="true" />
+                            <span>{formatTime(entry.createdAt)}</span>
                           </>
                         )}
                         
                         {entry.tags && entry.tags.length > 0 && (
-                          <span className="ml-3 flex items-center flex-wrap">
-                            <Tag size={14} className="mr-1" />
+                          <span className="ml-3 flex items-center flex-wrap" aria-label="Tags">
+                            <Tag size={14} className="mr-1" aria-hidden="true" />
                             {entry.tags.slice(0, 3).map(tag => (
                               <span key={tag} className="mr-2 text-violet-300">#{tag}</span>
                             ))}
@@ -591,18 +666,22 @@ const Diary = () => {
                         className={`p-1 rounded hover:bg-white/10 ${
                           bookmarkedEntries.includes(entry.id) ? 'text-yellow-400' : 'text-gray-400 opacity-0 group-hover:opacity-100'
                         } transition-opacity`}
+                        aria-label={bookmarkedEntries.includes(entry.id) ? "Remove bookmark" : "Add bookmark"}
+                        aria-pressed={bookmarkedEntries.includes(entry.id)}
                       >
                         <Bookmark size={16} fill={bookmarkedEntries.includes(entry.id) ? "currentColor" : "none"} />
                       </button>
                       <button 
                         onClick={() => editEntry(entry)}
                         className="p-1 rounded hover:bg-white/10 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Edit entry"
                       >
                         <Edit size={16} />
                       </button>
                       <button 
                         onClick={() => setShowDeleteConfirm(entry.id)}
                         className="p-1 rounded hover:bg-white/10 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Delete entry"
                       >
                         <Trash size={16} />
                       </button>
@@ -611,20 +690,22 @@ const Diary = () => {
                   
                   <div className={expandedEntry === entry.id ? "" : "line-clamp-3"}>
                     <p className="mt-2 text-white/80">
-                      {entry.content}
+                      {entry.content || "No content"}
                     </p>
                   </div>
                   
                   {/* Read more / less toggle */}
-                  {entry.content.length > 200 && (
+                  {entry.content && entry.content.length > 200 && (
                     <button 
                       onClick={() => setExpandedEntry(expandedEntry === entry.id ? null : entry.id)}
                       className="mt-1 text-sm text-violet-300 hover:text-violet-200 flex items-center"
+                      aria-expanded={expandedEntry === entry.id}
                     >
                       {expandedEntry === entry.id ? "Show less" : "Read more"}
                       <ChevronDown 
                         size={16} 
                         className={`ml-1 transition-transform ${expandedEntry === entry.id ? "rotate-180" : ""}`} 
+                        aria-hidden="true"
                       />
                     </button>
                   )}
@@ -637,12 +718,5 @@ const Diary = () => {
     </div>
   );
 };
-
-// Manually define a Check icon since it wasn't imported
-const Check = ({ size = 24, ...props }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
 
 export default Diary;
