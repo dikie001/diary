@@ -28,7 +28,7 @@ const Navbar = () => {
 
   return (
     <div
-    className="w-full relative z-100 flex justify-between items-center h-16 p-2 bg-gradient-to-r from-indigo-700 via-blue-500 to-violet-600  backdrop-blur-lg shadow-md shadow-gray-800 "
+    className="w-full sticky top-0 relative z-100 flex justify-between items-center h-16 p-2 bg-gradient-to-r from-indigo-700 via-blue-500 to-violet-600  backdrop-blur-lg shadow-md shadow-gray-800 "
 
     >
       
@@ -46,7 +46,7 @@ const Navbar = () => {
       <div
         className={`${
           isOpen ? "block" : "hidden"
-        } flex flex-col w-60 md:w-80 items-center  z-30 absolute top-5 right-5 text-white font-semibold pt-4 bg-black/50 backdrop-blur-3xl p-2 rounded-2xl shadow-lg shadow-gray-700`}
+        } flex flex-col w-80 md:w-90 items-center  z-30 absolute top-5 right-5 text-white font-semibold pt-4 bg-black/50 backdrop-blur-3xl p-2 rounded-2xl shadow-lg shadow-gray-700`}
       >
         <button
           onClick={() => setIsOpen(false)}
