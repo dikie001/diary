@@ -324,7 +324,7 @@ const Diary = () => {
             
             {/* Mood Selection with 3D-style emoji buttons */}
             <div className="mb-4">
-              <label className="block mb-2 text-sm">How are you feeling?</label>
+              <label className="block mb-2 font-bold">How are you feeling?</label>
               <div className="flex gap-3 flex-wrap">
                 {[
                   { name: "neutral", emoji: "😐" },
@@ -356,7 +356,7 @@ const Diary = () => {
             
             {/* Tags Input */}
             <div className="mb-4">
-              <label className="block mb-2 text-sm">Tags</label>
+              <label className="block mb-2 font-bold">Tags</label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map(tag => (
                   <span key={tag} className="bg-violet-700/50 px-3 py-1 rounded-full text-sm flex items-center">
