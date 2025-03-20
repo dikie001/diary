@@ -4,16 +4,9 @@ import Navbar from '../components/Navbar';
 const Diary = () => {
   return (
     <div className="h-screen flex overflow-y-auto flex-col bg-gradient-to-br from-indigo-900 via-blue-700 to-violet-800 text-white">
-      {/* Header */}
-      <header className="w-full mx-auto overflow-visible flex sticky top-0 left-0 right-0 justify-between items-center p-2 bg-black/30 backdrop-blur-md">
-        <h1 className="text-2xl font-bold">WhisperNote</h1>
-        <nav>
-        <Navbar/>
-        </nav>
-      </header>
-
+    <Navbar/>
       {/* Main Content */}
-      <main className="p-4 w-full md:w-[80%] h-dvh lg:w-[60%]  ">
+      <main className="p-4 w-full md:w-[80%] h-dvh lg:w-[60%] m-auto ">
         {/* Diary Entry Form */}
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">New Entry</h2>

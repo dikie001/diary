@@ -4,12 +4,9 @@ import Navbar from "../components/Navbar";
 const Contact = () => {
   return (
     <>
-          <header className="flex sticky z-40 top-0 left-0 right-0 justify-between items-center p-2 bg-gradient-to-r from-indigo-700 via-blue-500 to-violet-600  backdrop-blur-lg shadow-lg shadow-gray-800">
-        <h1 className="text-2xl text-white font-bold">WhisperNote</h1>
-        <nav>
+      
         <Navbar/>
-        </nav>
-      </header>
+     
       <div className="h-dvh flex  flex-col items-center bg-gradient-to-r from-indigo-700 via-blue-500 to-violet-600 px-6 pt-1">
      
  

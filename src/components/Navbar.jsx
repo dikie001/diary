@@ -12,22 +12,25 @@ const Navbar = () => {
 
   return (
     <div
-    className="w-full relative sticky top-0 left-0 right-0 z-10 drop-shadow-2xl items-center flex justify-center border-b-2 border-b-indigo-600 h-16 bg-gradient-to-r from-indigo-700 to-blue-950"
+    className="w-full relative z-100 flex justify-between items-center h-16 p-2 bg-gradient-to-r from-indigo-700 via-blue-500 to-violet-600  backdrop-blur-lg shadow-md shadow-gray-800 "
 
     >
-      <div className="hidden lg:block space-x-5 text-white font-bold lg:space-x-7">
-        <Link to="/login">Login</Link>
-        <Link to="/signup">SignUp</Link>
-        <Link to="/">Home</Link>
-        <Link to="/about">About</Link>
-        <Link to="/contact">Contact</Link>
+      
+      <h1 className="lg:ml-20 text-2xl font-extrabold text-">WhisperNote</h1>
+      <div className="hidden lg:block lg:mr-20 space-x-5 text-white font-bold lg:space-x-7">
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/login">Login</Link>
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/signup">SignUp</Link>
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/">Home</Link>
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/about">About</Link>
+        <Link className='hover:border-b-cyan-500 border-b-3 border-b-transparent transition-all duration-300 hover:text-fuchsia-700 active:border-b-cyan-500 active:text-fuchsia-900' to="/contact">Contact</Link>
       </div>
+
 
       {/* Mobile Menu */}
       <div
         className={`${
           isOpen ? "block" : "hidden"
-        } flex flex-col w-60 md:w-80 items-center z-30 absolute top-5 right-5 text-white font-semibold pt-4 bg-black/50 backdrop-blur-3xl p-2 rounded-2xl shadow-lg shadow-gray-700`}
+        } flex flex-col w-60 md:w-80 items-center  z-30 absolute top-5 right-5 text-white font-semibold pt-4 bg-black/50 backdrop-blur-3xl p-2 rounded-2xl shadow-lg shadow-gray-700`}
       >
         <button
           onClick={() => setIsOpen(false)}
