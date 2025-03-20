@@ -515,7 +515,7 @@ const Diary = () => {
               placeholder="Search entries by title, content or tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 p-3 bg-white/5 rounded-lg focus:ring-2 focus:ring-violet-500 transition"
+              className="w-full pl-10 p-3 bg-white/5 rounded-lg  border-2 border-transparent outline-none focus:border-violet-400 transition"
             />
           </div>
         </div>
