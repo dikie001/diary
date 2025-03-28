@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { auth, db } from "../firebase/config";
 import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc,setDoc, doc } from "firebase/firestore";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { FaSpinner } from "react-icons/fa";
@@ -17,6 +17,8 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [isClick, setIsClick] = useState(false);
+
+
   const handleCheckboxChange = (e) => {
     setIsChecked(e.target.checked);
   };
@@ -36,8 +38,8 @@ const Signup = () => {
       const user = userCredential.user;
 
       // 📌 Store additional user info in Firestore
-      await addDoc(collection(db, "users"), {
-        uid: user.uid,
+      await setDoc(doc(db, "users", user.uid), {
+       
         email,
         username,
         createdAt: new Date(),
