@@ -10,7 +10,7 @@ const Contact = () => {
       <div className="h-dvh flex  flex-col items-center bg-gradient-to-r from-indigo-700 via-blue-500 to-violet-600 px-6 pt-1">
      
  
-        <div className="bg-black/30 z-20 mt-5 backdrop-blur-lg p-8 rounded-2xl shadow-lg shadow-gray-700 w-full max-w-lg text-white">
+        <div className="bg-black/30 z-20 mt-5 backdrop-blur-lg p-8 rounded-2xl shadow-lg shadow-gray-700 w-full max-w-xl text-white">
           <h2 className="text-3xl font-bold text-center mb-4">Get in Touch</h2>
           <p className="text-center text-white/80 mb-3">
             Have questions? Fill out the form below and we’ll get back to you.
